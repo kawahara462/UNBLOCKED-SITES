@@ -1,21 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet"> 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="__alloy_style.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet"> 
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="__alloy_style.css" rel="stylesheet">
+
+<style>
+/* 追加UI */
+.panel {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #111;
+    color: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    z-index: 9999;
+    font-size: 12px;
+}
+
+.keyboard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #222;
+    padding: 10px;
+    display: none;
+    z-index: 9999;
+}
+
+.key {
+    display: inline-block;
+    margin: 3px;
+    padding: 10px;
+    background: #444;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+</style>
 </head>
-<body >
+
+<body>
 <div class="container">
-<p>Classroom</p>
+<p>CLASSROOM</p>
+
 <form class="url" method="POST" action="/proxy/session/">
     <input placeholder="https://www.google.com" name="url" id="iurl" type="text">
-    <button type="submit" id="btn">開く</button>
+    <button type="submit" id="btn">Go!</button>
+    
 </form>
 </div>
+
+<!-- 🔧 設定パネル -->
+<div class="panel">
+<label><input type="checkbox" id="toggleRemap"> キー割当変更</label><br>
+<label><input type="checkbox" id="toggleKeyboard"> 仮想キーボード</label><br><br>
+
+<button onclick="downloadKeymap()">JSON保存</button>
+<input type="file" onchange="loadKeymap(event)">
 </div>
+
+<!-- ⌨ 仮想キーボード -->
+<div class="keyboard" id="keyboard"></div>
+
+<script>
+// =========================
+// キー割り当て
+// =========================
+let keymap = {
+    "w": "ArrowUp",
+    "a": "ArrowLeft",
+    "s": "ArrowDown",
+    "d": "ArrowRight"
+};
+
+// =========================
+// ON/OFF
+// =========================
+let remapEnabled = false;
+let keyboardEnabled = false;
+
+document.getElementById("toggleRemap").onchange = e => {
+    remapEnabled = e.target.checked;
+};
+
+document.getElementById("toggleKeyboard").onchange = e => {
+    keyboardEnabled = e.target.checked;
+    document.getElementById("keyboard").style.display = keyboardEnabled ? "block" : "none";
+};
+
+// =========================
+// キーリマップ処理
+// =========================
+document.addEventListener("keydown", e => {
+    if (!remapEnabled) return;
+
+    let mapped = keymap[e.key];
+    if (mapped) {
+        e.preventDefault();
+        let event = new KeyboardEvent("keydown", { key: mapped });
+        document.dispatchEvent(event);
+    }
+});
+
+// =========================
+// JSON保存
+// =========================
+function downloadKeymap() {
+    const blob = new Blob([JSON.stringify(keymap, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "keymap.json";
+    a.click();
+}
+
+// =========================
+// JSON読み込み
+// =========================
+function loadKeymap(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            keymap = JSON.parse(e.target.result);
+            alert("読み込み成功");
+        } catch {
+            alert("JSONエラー");
+        }
+    };
+    reader.readAsText(file);
+}
+
+// =========================
+// 仮想キーボード生成
+// =========================
+const keys = ["w","a","s","d","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"," "];
+const keyboard = document.getElementById("keyboard");
+
+keys.forEach(k => {
+    const btn = document.createElement("div");
+    btn.className = "key";
+    btn.textContent = k;
+
+    btn.onclick = () => {
+        const event = new KeyboardEvent("keydown", { key: k });
+        document.dispatchEvent(event);
+    };
+
+    keyboard.appendChild(btn);
+});
+
+// =========================
+// キー編集（クリックで変更）
+// =========================
+document.addEventListener("contextmenu", e => {
+    if (!remapEnabled) return;
+
+    let key = prompt("変更したいキー（例: w）");
+    if (!key) return;
+
+    let newKey = prompt("割り当て先（例: ArrowUp）");
+    if (!newKey) return;
+
+    keymap[key] = newKey;
+    alert("設定完了");
+});
+</script>
+
 </body>
 </html>
