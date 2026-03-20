@@ -304,16 +304,14 @@
 
   } else return next();
   });
-const fetch = require("node-fetch");
-
-// CORS（なければ）
+// CORS
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "*");
     next();
 });
 
-// API追加
+// API
 app.get("/api/proxy", async (req, res) => {
     const targetUrl = req.query.url;
     if (!targetUrl) {
