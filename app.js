@@ -304,3 +304,35 @@
 
   } else return next();
   });
+const fetch = require("node-fetch");
+
+// CORS（なければ）
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "*");
+    next();
+});
+
+// API追加
+app.get("/api/proxy", async (req, res) => {
+    const targetUrl = req.query.url;
+    if (!targetUrl) {
+        return res.status(400).json({ error: "url required" });
+    }
+
+    try {
+        const response = await fetch(targetUrl, {
+            headers: { "User-Agent": "Mozilla/5.0" }
+        });
+
+        const text = await response.text();
+
+        res.json({
+            status: response.status,
+            body: text
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
