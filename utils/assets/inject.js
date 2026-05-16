@@ -1,69 +1,109 @@
-window.addEventListener("DOMContentLoaded", () => {
-            const panel = document.createElement("div");
+var alloy_data = document.querySelector('#_alloy_data');
 
-                            panel.id = "proxy-editor";
+var url = alloy_data.getAttribute('url');
 
-                            panel.style.cssText = `
-                                    position:fixed;
-                                            top:10px;
-                                                    right:10px;
-                                                            width:400px;
-                                                                    height:500px;
-                                                                            background:#111;
-                                                                                    color:#fff;
-                                                                                            z-index:999999999;
-                                                                                                    border:1px solid #555;
-                                                                                                            display:flex;
-                                                                                                                    flex-direction:column;
-                                                                                                                            font-family:monospace;
-                                                                                                                                `;
+var prefix = alloy_data.getAttribute('prefix');
 
-                            panel.innerHTML = `
-                                    <div style="padding:8px;background:#222;">HTML Editor</div>
-                                            <textarea id="proxy-html"
-                                                    style="
-                                                            flex:1;
-                                                                    background:#000;
-                                                                            color:#0f0;
-                                                                                    width:100%;
-                                                                                            resize:none;
-                                                                                                    border:none;
-                                                                                                            padding:10px;
-                                                                                                                    "></textarea>
-                                                                                                                    
-                                                                                                                            <button id="proxy-apply">Apply</button>
-                                                                                                                                `;
+url = new URL(atob(url))
 
-                            document.body.appendChild(panel);
+rewrite_url = (str) => {
+                proxied_url = '';
+                if (str.startsWith(window.location.origin + '/') && !str.startsWith(window.location.origin + prefix)) {
+                                    str =  '/' + str.split('/').splice(3).join('/');
+                }
+                if (str.startsWith('//')) {
+                                    str = 'http:' + str;
+                } else if (str.startsWith('/') && !str.startsWith(prefix)) {
+                                    str = url.origin + str
+                }
+                if (str.startsWith('https://') || str.startsWith('http://')) {
+                                     path = "/" + str.split('/').splice(3).join('/');
+                                     origin = btoa(str.split('/').splice(0, 3).join('/'));
+                                     return proxied_url = prefix + origin + path 
+                } else {
+                                   proxied_url = str;
+                }
+                return  proxied_url;
+} 
 
-                            let selected = null;
 
-                            document.addEventListener("click", e => {
-                                            if (e.target.closest("#proxy-editor")) return;
+let fetch_rewrite = window.fetch;  window.fetch = function(url, options) {
+                url = rewrite_url(url);
+                return fetch_rewrite.apply(this, arguments);
+}
 
-                                                              e.preventDefault();
-                                            e.stopPropagation();
+let xml_rewrite = window.XMLHttpRequest.prototype.open;window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+                   url = rewrite_url(url);
+                   return xml_rewrite.apply(this, arguments);
+}
 
-                                                              selected = e.target;
+let createelement_rewrite = document.createElement; document.createElement = function(tag) {
+                var element = createelement_rewrite.call(document, tag);
+                if (tag.toLowerCase() === 'script' || tag.toLowerCase() === 'iframe' || tag.toLowerCase() === 'embed') {
+                                    Object.defineProperty(element.__proto__, 'src', {
+                                                            set: function(value) {
+                                                                                        value = rewrite_url(value)
+                                                                                        element.setAttribute('src', value)
+                                                            }
+                                    }); 
+                } else if (tag.toLowerCase() === 'link') {
+                                    Object.defineProperty(element.__proto__, 'href', {
+                                                            set: function(value) {
+                                                                                        value = rewrite_url(value)
+                                                                                        element.setAttribute('href', value)
+                                                            }
+                                    }); 
+                } else if (tag.toLowerCase() === 'form') {
+                                    Object.defineProperty(element.__proto__, 'action', {
+                                                            set: function(value) {
+                                                                                        value = rewrite_url(value)
+                                                                                        element.setAttribute('action', value)
+                                                            }
+                                    }); 
+                }
+                return element;
+}
 
-                                                              selected.style.outline = "2px solid red";
+let setattribute_rewrite = window.Element.prototype.setAttribute; window.Element.prototype.setAttribute = function(attribute, href) {
+                if (attribute == ('src') || attribute == ('href') || attribute == ('action')) {
+                                    href = rewrite_url(href)
+                } else href = href;
+                return setattribute_rewrite.apply(this, arguments)
+} 
 
-                                                              document.getElementById("proxy-html").value =
-                                                                                  selected.outerHTML;
-                            }, true);
+// Rewriting all incoming websocket request.
 
-                            document.getElementById("proxy-apply").onclick = () => {
-                                            if (!selected) return;
+  WebSocket = new Proxy(WebSocket, {
 
-                                            const div = document.createElement("div");
-                                            div.innerHTML =
-                                                                document.getElementById("proxy-html").value;
+                            construct(target, args_array) {
 
-                                            const newEl = div.firstElementChild;
+                      var protocol;
 
-                                            if (newEl) {
-                                                                selected.replaceWith(newEl);
-                                                                selected = newEl;
-                                            }
-                            };
-});
+                      if (location.protocol == 'https:') { protocol = 'wss://' } else { protocol = 'ws://' }
+
+                      args_array[0] = protocol + location.origin.split('/').splice(2).join('/') + prefix + 'ws/' + btoa(args_array[0]);
+
+                      return new target(args_array);
+                            }
+
+  });
+
+  // Rewriting incoming pushstate.
+
+  history.pushState = new Proxy(history.pushState, {
+
+                                     apply: (target, thisArg, args_array) => {
+
+                       args_array[2] = rewrite_url(args_array[2])
+
+                       return target.apply(thisArg, args_array)
+                                     }
+
+  });
+
+var previousState = window.history.state;
+setInterval(function() {
+                   if (!window.location.pathname.startsWith(`${prefix}${btoa(url.origin)}/`)) {
+                                       history.replaceState('', '', `${prefix}${btoa(url.origin)}/${window.location.href.split('/').splice(3).join('/')}`);
+                   }
+}, 0.1);
