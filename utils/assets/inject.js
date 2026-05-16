@@ -1,109 +1,181 @@
-var alloy_data = document.querySelector('#_alloy_data');
+(() => {
+        const STYLE = `
+                #proxy-editor {
+                            position: fixed;
+                                        top: 10px;
+                                                    right: 10px;
+                                                                width: 420px;
+                                                                            height: 500px;
+                                                                                        background: #111;
+                                                                                                    color: #fff;
+                                                                                                                z-index: 2147483647;
+                                                                                                                            font-family: monospace;
+                                                                                                                                        border: 1px solid #555;
+                                                                                                                                                    display: flex;
+                                                                                                                                                                flex-direction: column;
+                                                                                                                                                                            resize: both;
+                                                                                                                                                                                        overflow: hidden;
+                                                                                                                                                                                                }
+                                                                                                                                                                                                
+                                                                                                                                                                                                        #proxy-editor-header {
+                                                                                                                                                                                                                    background: #222;
+                                                                                                                                                                                                                                padding: 8px;
+                                                                                                                                                                                                                                            cursor: move;
+                                                                                                                                                                                                                                                        user-select: none;
+                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                        #proxy-editor textarea {
+                                                                                                                                                                                                                                                                                    flex: 1;
+                                                                                                                                                                                                                                                                                                width: 100%;
+                                                                                                                                                                                                                                                                                                            background: #000;
+                                                                                                                                                                                                                                                                                                                        color: #0f0;
+                                                                                                                                                                                                                                                                                                                                    border: none;
+                                                                                                                                                                                                                                                                                                                                                resize: none;
+                                                                                                                                                                                                                                                                                                                                                            padding: 10px;
+                                                                                                                                                                                                                                                                                                                                                                        outline: none;
+                                                                                                                                                                                                                                                                                                                                                                                    font-size: 12px;
+                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                                    #proxy-editor-controls {
+                                                                                                                                                                                                                                                                                                                                                                                                                display: flex;
+                                                                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                                                                #proxy-editor button {
+                                                                                                                                                                                                                                                                                                                                                                                                                                            flex: 1;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        background: #333;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    color: white;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                border: none;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            padding: 8px;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        cursor: pointer;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        #proxy-editor button:hover {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    background: #555;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .proxy-highlight {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                outline: 2px solid red !important;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            cursor: pointer !important;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        `;
 
-var url = alloy_data.getAttribute('url');
+     const style = document.createElement("style");
+        style.textContent = STYLE;
+        document.head.appendChild(style);
 
-var prefix = alloy_data.getAttribute('prefix');
+     let selected = null;
+        let hover = null;
 
-url = new URL(atob(url))
+     const panel = document.createElement("div");
+        panel.id = "proxy-editor";
 
-rewrite_url = (str) => {
-    proxied_url = '';
-    if (str.startsWith(window.location.origin + '/') && !str.startsWith(window.location.origin + prefix)) {
-        str =  '/' + str.split('/').splice(3).join('/');
-    }
-    if (str.startsWith('//')) {
-        str = 'http:' + str;
-    } else if (str.startsWith('/') && !str.startsWith(prefix)) {
-        str = url.origin + str
-    }
-    if (str.startsWith('https://') || str.startsWith('http://')) {
-         path = "/" + str.split('/').splice(3).join('/');
-         origin = btoa(str.split('/').splice(0, 3).join('/'));
-         return proxied_url = prefix + origin + path 
-    } else {
-       proxied_url = str;
-    }
-    return  proxied_url;
-  } 
-  
+     panel.innerHTML = `
+             <div id="proxy-editor-header">HTML Inspector</div>
+                     <textarea id="proxy-html"></textarea>
+                             <div id="proxy-editor-controls">
+                                         <button id="proxy-apply">Apply</button>
+                                                     <button id="proxy-copy">Copy</button>
+                                                                 <button id="proxy-close">Hide</button>
+                                                                         </div>
+                                                                             `;
 
-let fetch_rewrite = window.fetch;  window.fetch = function(url, options) {
-    url = rewrite_url(url);
-    return fetch_rewrite.apply(this, arguments);
-}
+     document.body.appendChild(panel);
 
-let xml_rewrite = window.XMLHttpRequest.prototype.open;window.XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-       url = rewrite_url(url);
-       return xml_rewrite.apply(this, arguments);
-    }
-     
-let createelement_rewrite = document.createElement; document.createElement = function(tag) {
-    var element = createelement_rewrite.call(document, tag);
-    if (tag.toLowerCase() === 'script' || tag.toLowerCase() === 'iframe' || tag.toLowerCase() === 'embed') {
-        Object.defineProperty(element.__proto__, 'src', {
-            set: function(value) {
-                value = rewrite_url(value)
-                element.setAttribute('src', value)
-            }
-        }); 
-    } else if (tag.toLowerCase() === 'link') {
-        Object.defineProperty(element.__proto__, 'href', {
-            set: function(value) {
-                value = rewrite_url(value)
-                element.setAttribute('href', value)
-            }
-        }); 
-    } else if (tag.toLowerCase() === 'form') {
-        Object.defineProperty(element.__proto__, 'action', {
-            set: function(value) {
-                value = rewrite_url(value)
-                element.setAttribute('action', value)
-            }
-        }); 
-    }
-    return element;
-}
+     const textarea = document.getElementById("proxy-html");
 
-let setattribute_rewrite = window.Element.prototype.setAttribute; window.Element.prototype.setAttribute = function(attribute, href) {
-    if (attribute == ('src') || attribute == ('href') || attribute == ('action')) {
-        href = rewrite_url(href)
-    } else href = href;
-    return setattribute_rewrite.apply(this, arguments)
- } 
-
-// Rewriting all incoming websocket request.
-
-  WebSocket = new Proxy(WebSocket, {
-
-    construct(target, args_array) {
-        
-        var protocol;
-        
-        if (location.protocol == 'https:') { protocol = 'wss://' } else { protocol = 'ws://' }
-        
-        args_array[0] = protocol + location.origin.split('/').splice(2).join('/') + prefix + 'ws/' + btoa(args_array[0]);
-        
-        return new target(args_array);
-      }
-    
-    });
-  
-  // Rewriting incoming pushstate.
-
-  history.pushState = new Proxy(history.pushState, {
-
-     apply: (target, thisArg, args_array) => {
-         
-         args_array[2] = rewrite_url(args_array[2])
-
-         return target.apply(thisArg, args_array)
+     function removeHighlight() {
+                 if (hover) hover.classList.remove("proxy-highlight");
+                 hover = null;
      }
 
-  });
+     function inspect(target) {
+                 if (!target || target.closest("#proxy-editor")) return;
+                 selected = target;
+                 textarea.value = selected.outerHTML;
+     }
 
-var previousState = window.history.state;
-setInterval(function() {
-       if (!window.location.pathname.startsWith(`${prefix}${btoa(url.origin)}/`)) {
-        history.replaceState('', '', `${prefix}${btoa(url.origin)}/${window.location.href.split('/').splice(3).join('/')}`);
-    }
-}, 0.1);
+     document.addEventListener("mouseover", e => {
+                 if (e.target.closest("#proxy-editor")) return;
+
+                                       removeHighlight();
+                 hover = e.target;
+                 hover.classList.add("proxy-highlight");
+     }, true);
+
+     document.addEventListener("mouseout", removeHighlight, true);
+
+     document.addEventListener("click", e => {
+                 if (e.target.closest("#proxy-editor")) return;
+
+                                       e.preventDefault();
+                 e.stopPropagation();
+
+                                       inspect(e.target);
+     }, true);
+
+     document.getElementById("proxy-apply").onclick = () => {
+                 if (!selected) return;
+
+                 try {
+                                 const wrapper = document.createElement("div");
+                                 wrapper.innerHTML = textarea.value.trim();
+
+                     const newNode = wrapper.firstElementChild;
+
+                     if (newNode) {
+                                         selected.replaceWith(newNode);
+                                         selected = newNode;
+                     }
+                 } catch (err) {
+                                 console.error(err);
+                 }
+     };
+
+     document.getElementById("proxy-copy").onclick = async () => {
+                 try {
+                                 await navigator.clipboard.writeText(textarea.value);
+                 } catch {}
+     };
+
+     document.getElementById("proxy-close").onclick = () => {
+                 panel.style.display =
+                                 panel.style.display === "none" ? "flex" : "none";
+     };
+
+     // drag
+     (() => {
+                 const header = document.getElementById("proxy-editor-header");
+
+              let dragging = false;
+                 let offsetX = 0;
+                 let offsetY = 0;
+
+              header.onmousedown = e => {
+                              dragging = true;
+                              offsetX = e.clientX - panel.offsetLeft;
+                              offsetY = e.clientY - panel.offsetTop;
+              };
+
+              document.onmouseup = () => dragging = false;
+
+              document.onmousemove = e => {
+                              if (!dragging) return;
+
+                              panel.style.left = `${e.clientX - offsetX}px`;
+                              panel.style.top = `${e.clientY - offsetY}px`;
+                              panel.style.right = "auto";
+              };
+     })();
+
+     // hotkeys
+     document.addEventListener("keydown", e => {
+                 if (e.key === "Escape") {
+                                 panel.style.display =
+                                                     panel.style.display === "none" ? "flex" : "none";
+                 }
+
+                                       if (e.key === "ArrowUp" && selected?.parentElement) {
+                                                       inspect(selected.parentElement);
+                                       }
+     });
+})();
