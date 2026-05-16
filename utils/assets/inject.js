@@ -1,181 +1,69 @@
-(() => {
-        const STYLE = `
-                #proxy-editor {
-                            position: fixed;
-                                        top: 10px;
-                                                    right: 10px;
-                                                                width: 420px;
-                                                                            height: 500px;
-                                                                                        background: #111;
-                                                                                                    color: #fff;
-                                                                                                                z-index: 2147483647;
-                                                                                                                            font-family: monospace;
-                                                                                                                                        border: 1px solid #555;
-                                                                                                                                                    display: flex;
-                                                                                                                                                                flex-direction: column;
-                                                                                                                                                                            resize: both;
-                                                                                                                                                                                        overflow: hidden;
-                                                                                                                                                                                                }
-                                                                                                                                                                                                
-                                                                                                                                                                                                        #proxy-editor-header {
-                                                                                                                                                                                                                    background: #222;
-                                                                                                                                                                                                                                padding: 8px;
-                                                                                                                                                                                                                                            cursor: move;
-                                                                                                                                                                                                                                                        user-select: none;
-                                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                        #proxy-editor textarea {
-                                                                                                                                                                                                                                                                                    flex: 1;
-                                                                                                                                                                                                                                                                                                width: 100%;
-                                                                                                                                                                                                                                                                                                            background: #000;
-                                                                                                                                                                                                                                                                                                                        color: #0f0;
-                                                                                                                                                                                                                                                                                                                                    border: none;
-                                                                                                                                                                                                                                                                                                                                                resize: none;
-                                                                                                                                                                                                                                                                                                                                                            padding: 10px;
-                                                                                                                                                                                                                                                                                                                                                                        outline: none;
-                                                                                                                                                                                                                                                                                                                                                                                    font-size: 12px;
-                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                            
-                                                                                                                                                                                                                                                                                                                                                                                                    #proxy-editor-controls {
-                                                                                                                                                                                                                                                                                                                                                                                                                display: flex;
-                                                                                                                                                                                                                                                                                                                                                                                                                        }
-                                                                                                                                                                                                                                                                                                                                                                                                                        
-                                                                                                                                                                                                                                                                                                                                                                                                                                #proxy-editor button {
-                                                                                                                                                                                                                                                                                                                                                                                                                                            flex: 1;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                        background: #333;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                    color: white;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                border: none;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            padding: 8px;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        cursor: pointer;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        #proxy-editor button:hover {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    background: #555;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    .proxy-highlight {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                outline: 2px solid red !important;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            cursor: pointer !important;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        `;
+window.addEventListener("DOMContentLoaded", () => {
+            const panel = document.createElement("div");
 
-     const style = document.createElement("style");
-        style.textContent = STYLE;
-        document.head.appendChild(style);
+                            panel.id = "proxy-editor";
 
-     let selected = null;
-        let hover = null;
+                            panel.style.cssText = `
+                                    position:fixed;
+                                            top:10px;
+                                                    right:10px;
+                                                            width:400px;
+                                                                    height:500px;
+                                                                            background:#111;
+                                                                                    color:#fff;
+                                                                                            z-index:999999999;
+                                                                                                    border:1px solid #555;
+                                                                                                            display:flex;
+                                                                                                                    flex-direction:column;
+                                                                                                                            font-family:monospace;
+                                                                                                                                `;
 
-     const panel = document.createElement("div");
-        panel.id = "proxy-editor";
+                            panel.innerHTML = `
+                                    <div style="padding:8px;background:#222;">HTML Editor</div>
+                                            <textarea id="proxy-html"
+                                                    style="
+                                                            flex:1;
+                                                                    background:#000;
+                                                                            color:#0f0;
+                                                                                    width:100%;
+                                                                                            resize:none;
+                                                                                                    border:none;
+                                                                                                            padding:10px;
+                                                                                                                    "></textarea>
+                                                                                                                    
+                                                                                                                            <button id="proxy-apply">Apply</button>
+                                                                                                                                `;
 
-     panel.innerHTML = `
-             <div id="proxy-editor-header">HTML Inspector</div>
-                     <textarea id="proxy-html"></textarea>
-                             <div id="proxy-editor-controls">
-                                         <button id="proxy-apply">Apply</button>
-                                                     <button id="proxy-copy">Copy</button>
-                                                                 <button id="proxy-close">Hide</button>
-                                                                         </div>
-                                                                             `;
+                            document.body.appendChild(panel);
 
-     document.body.appendChild(panel);
+                            let selected = null;
 
-     const textarea = document.getElementById("proxy-html");
+                            document.addEventListener("click", e => {
+                                            if (e.target.closest("#proxy-editor")) return;
 
-     function removeHighlight() {
-                 if (hover) hover.classList.remove("proxy-highlight");
-                 hover = null;
-     }
+                                                              e.preventDefault();
+                                            e.stopPropagation();
 
-     function inspect(target) {
-                 if (!target || target.closest("#proxy-editor")) return;
-                 selected = target;
-                 textarea.value = selected.outerHTML;
-     }
+                                                              selected = e.target;
 
-     document.addEventListener("mouseover", e => {
-                 if (e.target.closest("#proxy-editor")) return;
+                                                              selected.style.outline = "2px solid red";
 
-                                       removeHighlight();
-                 hover = e.target;
-                 hover.classList.add("proxy-highlight");
-     }, true);
+                                                              document.getElementById("proxy-html").value =
+                                                                                  selected.outerHTML;
+                            }, true);
 
-     document.addEventListener("mouseout", removeHighlight, true);
+                            document.getElementById("proxy-apply").onclick = () => {
+                                            if (!selected) return;
 
-     document.addEventListener("click", e => {
-                 if (e.target.closest("#proxy-editor")) return;
+                                            const div = document.createElement("div");
+                                            div.innerHTML =
+                                                                document.getElementById("proxy-html").value;
 
-                                       e.preventDefault();
-                 e.stopPropagation();
+                                            const newEl = div.firstElementChild;
 
-                                       inspect(e.target);
-     }, true);
-
-     document.getElementById("proxy-apply").onclick = () => {
-                 if (!selected) return;
-
-                 try {
-                                 const wrapper = document.createElement("div");
-                                 wrapper.innerHTML = textarea.value.trim();
-
-                     const newNode = wrapper.firstElementChild;
-
-                     if (newNode) {
-                                         selected.replaceWith(newNode);
-                                         selected = newNode;
-                     }
-                 } catch (err) {
-                                 console.error(err);
-                 }
-     };
-
-     document.getElementById("proxy-copy").onclick = async () => {
-                 try {
-                                 await navigator.clipboard.writeText(textarea.value);
-                 } catch {}
-     };
-
-     document.getElementById("proxy-close").onclick = () => {
-                 panel.style.display =
-                                 panel.style.display === "none" ? "flex" : "none";
-     };
-
-     // drag
-     (() => {
-                 const header = document.getElementById("proxy-editor-header");
-
-              let dragging = false;
-                 let offsetX = 0;
-                 let offsetY = 0;
-
-              header.onmousedown = e => {
-                              dragging = true;
-                              offsetX = e.clientX - panel.offsetLeft;
-                              offsetY = e.clientY - panel.offsetTop;
-              };
-
-              document.onmouseup = () => dragging = false;
-
-              document.onmousemove = e => {
-                              if (!dragging) return;
-
-                              panel.style.left = `${e.clientX - offsetX}px`;
-                              panel.style.top = `${e.clientY - offsetY}px`;
-                              panel.style.right = "auto";
-              };
-     })();
-
-     // hotkeys
-     document.addEventListener("keydown", e => {
-                 if (e.key === "Escape") {
-                                 panel.style.display =
-                                                     panel.style.display === "none" ? "flex" : "none";
-                 }
-
-                                       if (e.key === "ArrowUp" && selected?.parentElement) {
-                                                       inspect(selected.parentElement);
-                                       }
-     });
-})();
+                                            if (newEl) {
+                                                                selected.replaceWith(newEl);
+                                                                selected = newEl;
+                                            }
+                            };
+});
